@@ -57,6 +57,8 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 	var canvas = new Canvas(width, height),
 	ctx = canvas.getContext('2d');
 
+	console.log(imageFileName);
+
 	// https://github.com/Automattic/node-canvas/tree/v1.x
 	fs.readFile(backgroundImageFileName, function(err, background) {
 		if (err) {
@@ -87,7 +89,7 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 			ctx.fillStyle = "white";
 			ctx.font = "bold 120px Roboto";
 			ctx.textAlign = "center";
-			ctx.fillText("72.5", width/2, height*0.80); //℉
+			ctx.fillText(currentTemperature, width/2, height*0.80); //℉
 
 			ctx.fillStyle = "white";
 			ctx.font = "bold 18px Roboto";
@@ -103,10 +105,14 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 		}
 
 		// https://bl.ocks.org/shancarter/f877b05acb3bafb9d5844f2342344385
-		canvas.createPNGStream().pipe(fs.createWriteStream(imageFileName));
-		if (imageCreatedCallback !== null) {
-			imageCreatedCallback(imageFileName);
-		}
+		var pngFile = fs.createWriteStream(imageFileName);
+		canvas.createPNGStream().pipe(pngFile);
+
+		pngFile.on('finish', function() {
+			if (imageCreatedCallback !== null) {
+				imageCreatedCallback(imageFileName);
+			}
+	  });
 	});
 }
 
@@ -116,8 +122,10 @@ function writeFramebuffer(imageFileName) {
 		fbiProc.kill();
 	}
 
-	console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
+	//console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
 	fbiProc = spawn('fbi',  ["-T", "2", "-d", "/dev/fb1", "-noverbose", "-a", imageFileName]);
+	//fbiProc = spawn('open',  [imageFileName]);
+
 	// fbiProc.on('exit', function (code, signal) {
 	// 	console.log(`child process exited with code ${code} and signal ${signal}`);
 	//   });
