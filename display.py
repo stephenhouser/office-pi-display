@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#https://web.archive.org/web/20151027165018/http://jeremyblythe.blogspot.com/2014/09/raspberry-pi-pygame-ui-basics.html
 import pygame
 from pygame.locals import *
 import os
@@ -28,7 +30,7 @@ touch_buttons = {
 }
 
 for k, v in touch_buttons.items():
-    text_surface = font_big.render('%s'%k, True, WHITE)
+    text_surface = font_big.render('%s'%k, True, White)
     rect = text_surface.get_rect(center=v)
     lcd.blit(text_surface, rect)
 
