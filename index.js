@@ -3,18 +3,8 @@
 var fs = require("fs"),
 	path = require("path"),
 	date = require("datejs"),
-	os = require('os');
-
-const width = 320,
-	  height = 480;
-	  
-var Canvas = require('canvas'),
-	Image = Canvas.Image,
-	canvas = new Canvas(width, height),
-	ctx = canvas.getContext('2d');
-
-// ctx.fillStyle = "black";
-// ctx.fillRect(0, 0, canvas.width, canvas.height);
+	os = require('os'),
+	owfs = require('owfs').Client;
 
 var primary_ip = null;
 // https://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
@@ -42,6 +32,30 @@ Object.keys(ifaces).forEach(function (ifname) {
 		++alias;
 	});
 });
+
+var ow_temp = null;
+var ow_humid = null;
+
+var owcon = new Client('localhost');
+owcon.read("/26.103D15000000/temperature", function(err, result) {
+	ow_temp = result * 1.8 + 32;
+}
+
+owcon.read("/26.103D15000000/humidity", function(err, result) {
+	ow_humid = result;
+}
+
+// Draw the screen...
+const width = 320,
+	  height = 480;
+	  
+// ctx.fillStyle = "black";
+// ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+var Canvas = require('canvas'),
+	Image = Canvas.Image,
+	canvas = new Canvas(width, height),
+	ctx = canvas.getContext('2d');
 
 // https://github.com/Automattic/node-canvas/tree/v1.x
 fs.readFile(__dirname + '/background.png', function(err, background) {
