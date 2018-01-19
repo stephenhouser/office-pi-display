@@ -121,8 +121,8 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 var fbiProc = null;
 function writeFramebuffer(imageFileName) {
 	if (fbiProc !== null) {
-		fbiProc.kill('SIGHUP');
-		console.log("SIGHUP");
+		fbiProc.kill('SIGINT');
+		console.log("SIGINT");
 	} else {
 		console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
 		fbiProc = spawn('fbi',  ["-T", "2", "-d", "/dev/fb1", "-noverbose", "-a", imageFileName]);
