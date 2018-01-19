@@ -1,101 +1,144 @@
 #!/usr/bin/env node
 'use strict';
-var fs = require("fs"),
-	path = require("path"),
-	date = require("datejs"),
-	os = require('os'),
-	owfs = require('owfs').Client;
+var path = require("path");
+const { spawn } = require('child_process');
 
-var primary_ip = null;
-// https://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
-var ifaces = os.networkInterfaces();
-Object.keys(ifaces).forEach(function (ifname) {
-	var alias = 0;
+var readDataTimeout = 60000; // one minute
+var screenWidth = 320;
+var screenHeight = 480;
+var owfsDevice = "26.103D15000000"
+var currentTemperature = null;
+var currentHumidity = null;
+var currentIPAddress = null;
+var backgroundImageFileName = path.join(__dirname, "background.png");
+var outputImageFileName = path.join(__dirname, "display.png");
 
-	ifaces[ifname].forEach(function (iface) {
-		if ('IPv4' !== iface.family || iface.internal !== false) {
-			// skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
-			return;
-		}
-
-		if (primary_ip === null) {
-			primary_ip = iface.address;
-		}
-
-		// if (alias >= 1) {
-		// 	// this single interface has multiple ipv4 addresses
-		// 	console.log(ifname + ':' + alias, iface.address);
-		// } else {
-		// 	// this interface has only one ipv4 adress
-		// 	console.log(ifname, iface.address);
-		// }
-		++alias;
+// OneWire Temperature and Humidity Reading
+var owfsClient = require('owfs').Client;
+function updateSensors() {
+	var owfsConnection = new owfsClient('localhost');
+	owfsConnection.read("/" + owfsDevice + "/temperature", function(err, result) {
+		currentTemperature = Number(result) * 1.8 + 32;
 	});
-});
-
-var ow_temp = null;
-var ow_humid = null;
-
-var owcon = new Client('localhost');
-owcon.read("/26.103D15000000/temperature", function(err, result) {
-	ow_temp = result * 1.8 + 32;
+	
+	owfsConnection.read("/" + owfsDevice + "/humidity", function(err, result) {
+		currentHumidity = Number(result);
+	});
 }
 
-owcon.read("/26.103D15000000/humidity", function(err, result) {
-	ow_humid = result;
+// Get IP address from OS
+var os = require('os');
+function updateIPAddress() {
+	// https://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
+	currentIPAddress = null; // reset each time we look.
+	var ifaces = os.networkInterfaces();
+	Object.keys(ifaces).forEach(function (ifname) {
+		ifaces[ifname].forEach(function (iface) {
+			if ('IPv4' !== iface.family || iface.internal !== false) {
+				// skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+				return;
+			}
+	
+			if (currentIPAddress === null) {
+				currentIPAddress = iface.address;
+			}
+		});
+	});
 }
 
 // Draw the screen...
-const width = 320,
-	  height = 480;
-	  
-// ctx.fillStyle = "black";
-// ctx.fillRect(0, 0, canvas.width, canvas.height);
+var fs = require("fs"),
+	date = require("datejs");
 
 var Canvas = require('canvas'),
-	Image = Canvas.Image,
-	canvas = new Canvas(width, height),
+	Image = Canvas.Image;
+
+function createDisplayImage(width, height, imageFileName, imageCreatedCallback) {
+	var canvas = new Canvas(width, height),
 	ctx = canvas.getContext('2d');
 
-// https://github.com/Automattic/node-canvas/tree/v1.x
-fs.readFile(__dirname + '/background.png', function(err, background) {
-	if (err) throw err;
+	// https://github.com/Automattic/node-canvas/tree/v1.x
+	fs.readFile(backgroundImageFileName, function(err, background) {
+		if (err) {
+			throw err;
+		}
 
-	var img = new Image;
-	img.src = background;	
-	ctx.drawImage(img, 0, 0, img.width, img.height);
-	
-	var now = new Date();
+		var backgroundImage = new Image;
+		backgroundImage.src = background;	
+		ctx.drawImage(backgroundImage, 0, 0, backgroundImage.width, backgroundImage.height);
+		
+		var now = new Date();
 
-	// https://code.google.com/archive/p/datejs/wikis/FormatSpecifiers.wiki
-	var day_s = now.toString('ddd, MMM d');
-	ctx.fillStyle = "yellow";
-	ctx.font = "bold 36px Roboto";
-	ctx.textAlign = "center";
-	ctx.fillText(day_s, width/2, 36); //℉
+		// https://code.google.com/archive/p/datejs/wikis/FormatSpecifiers.wiki
+		var day_s = now.toString('ddd, MMM d');
+		ctx.fillStyle = "yellow";
+		ctx.font = "bold 36px Roboto";
+		ctx.textAlign = "center";
+		ctx.fillText(day_s, width/2, 36); //℉
 
-	// https://code.google.com/archive/p/datejs/wikis/FormatSpecifiers.wiki
-	var time_s = now.toString('h:mm:ss tt');
-	ctx.fillStyle = "yellow";
-	ctx.font = "bold 36px Roboto";
-	ctx.textAlign = "center";
-	ctx.fillText(time_s, width/2, 72); //℉
+		// https://code.google.com/archive/p/datejs/wikis/FormatSpecifiers.wiki
+		var time_s = now.toString('h:mm:ss tt');
+		ctx.fillStyle = "yellow";
+		ctx.font = "bold 36px Roboto";
+		ctx.textAlign = "center";
+		ctx.fillText(time_s, width/2, 72); //℉
 
-	ctx.fillStyle = "white";
-	ctx.font = "bold 120px Roboto";
-	ctx.textAlign = "center";
-	ctx.fillText("72.5", width/2, height*0.80); //℉
+		if (currentTemperature != null) {
+			ctx.fillStyle = "white";
+			ctx.font = "bold 120px Roboto";
+			ctx.textAlign = "center";
+			ctx.fillText("72.5", width/2, height*0.80); //℉
 
-	ctx.fillStyle = "white";
-	ctx.font = "bold 18px Roboto";
-	ctx.textAlign = "center";
-	ctx.fillText("°F", width*0.90, height*0.80); //℉
+			ctx.fillStyle = "white";
+			ctx.font = "bold 18px Roboto";
+			ctx.textAlign = "center";
+			ctx.fillText("°F", width*0.90, height*0.80); //℉
+		}
 
-	ctx.fillStyle = "skyblue";
-	ctx.font = "bold 18px Roboto";
-	ctx.textAlign = "center";
-	ctx.fillText(primary_ip, width/2, height-12); //℉
+		if (currentIPAddress !== null) {
+			ctx.fillStyle = "skyblue";
+			ctx.font = "bold 18px Roboto";
+			ctx.textAlign = "center";
+			ctx	.fillText(currentIPAddress, width/2, height-12);
+		}
 
-	// https://bl.ocks.org/shancarter/f877b05acb3bafb9d5844f2342344385
-	canvas.createPNGStream().pipe(fs.createWriteStream(path.join(__dirname, "display.png")));
-});
+		// https://bl.ocks.org/shancarter/f877b05acb3bafb9d5844f2342344385
+		canvas.createPNGStream().pipe(fs.createWriteStream(imageFileName));
+		if (imageCreatedCallback !== null) {
+			imageCreatedCallback(imageFileName);
+		}
+	});
+}
+
+var fbiProc = null;
+function writeFramebuffer(imageFileName) {
+	if (fbiProc !== null) {
+		fbiProc.kill();
+	}
+
+	console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
+	fbiProc = spawn('fbi',  ["-T", "2", "-d", "/dev/fb1", "-noverbose", "-a", imageFileName]);
+	// fbiProc.on('exit', function (code, signal) {
+	// 	console.log(`child process exited with code ${code} and signal ${signal}`);
+	//   });
+}
+
+function updateDisplay() {
+	createDisplayImage(screenWidth, screenHeight, outputImageFileName, function(imageName) {
+		//console.log("ip=" + currentIPAddress);
+		//console.log("temp=" + currentTemperature);
+		//console.log("humidity=" + currentHumidity);
+		writeFramebuffer(imageName)
+	});
+}
+
+// schedule to read every readDataTimeout
+updateSensors();
+setInterval(updateSensors, readDataTimeout);
+
+updateIPAddress();
+setInterval(updateIPAddress, readDataTimeout);
+
+// update display every second
+updateDisplay();
+setInterval(updateDisplay, 1000);
