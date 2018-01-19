@@ -120,16 +120,19 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 
 var fbiProc = null;
 function writeFramebuffer(imageFileName) {
-	if (fbiProc !== null) {
-		fbiProc.kill();
-	}
+	// if (fbiProc !== null) {
+	// 	fbiProc.kill();
+	// }
 
 	//console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
 	fbiProc = spawn('fbi',  ["-T", "2", "-d", "/dev/fb1", "-noverbose", "-a", imageFileName]);
-
-	// fbiProc.on('exit', function (code, signal) {
-	// 	console.log(`child process exited with code ${code} and signal ${signal}`);
-	//   });
+	setTimeout(function() {
+		fbiProc.kill();
+	}, 500)
+	
+	fbiProc.on('exit', function (code, signal) {
+		console.log(`child process exited with code ${code} and signal ${signal}`);
+	});
 }
 
 function updateDisplay() {
