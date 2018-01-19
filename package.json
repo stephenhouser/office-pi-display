@@ -1,0 +1,24 @@
+{
+	"name": "office-pi-display",
+	"version": "0.1.0",
+	"description": "A sample Node.js to generate a display on my work Raspberry Pi",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js"
+	},
+	"dependencies": {
+		"canvas": "^1.6.9",
+		"datejs": "^1.0.0-rc3",
+		"fs": "~0.0.1",
+		"os": "^0.1.1",
+		"path": "^0.12.7"
+	},
+	"engines": {
+		"node": "6.9"
+	},
+	"keywords": [
+		"node"
+	],
+	"author": "Stephen Houser",
+	"license": "MIT"
+}
