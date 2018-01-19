@@ -6,7 +6,7 @@ const { spawn } = require('child_process');
 var readDataTimeout = 60000; // one minute
 var screenWidth = 320;
 var screenHeight = 480;
-var owfsDevice = "26.103D15000000"
+var owfsDevice = "26.103D15000000";
 var currentTemperature = null;
 var currentHumidity = null;
 var currentIPAddress = null;
@@ -18,11 +18,15 @@ var owfsClient = require('owfs').Client;
 function updateSensors() {
 	var owfsConnection = new owfsClient('localhost');
 	owfsConnection.read("/" + owfsDevice + "/temperature", function(err, result) {
+		if (err) { console.log(err); }
 		currentTemperature = Number(result) * 1.8 + 32;
+		//console.log("Temperature = (" + result + ") " + currentTemperature);
 	});
 	
 	owfsConnection.read("/" + owfsDevice + "/humidity", function(err, result) {
+		if (err) { console.log(err); }
 		currentHumidity = Number(result);
+		//console.log("Humidity = (" + result + ") " + currentHumidity);
 	});
 }
 
@@ -57,8 +61,6 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 	var canvas = new Canvas(width, height),
 	ctx = canvas.getContext('2d');
 
-	console.log(imageFileName);
-
 	// https://github.com/Automattic/node-canvas/tree/v1.x
 	fs.readFile(backgroundImageFileName, function(err, background) {
 		if (err) {
@@ -85,11 +87,11 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 		ctx.textAlign = "center";
 		ctx.fillText(time_s, width/2, 72); //℉
 
-		if (currentTemperature != null) {
+		if (currentTemperature !== null) {
 			ctx.fillStyle = "white";
 			ctx.font = "bold 120px Roboto";
 			ctx.textAlign = "center";
-			ctx.fillText(currentTemperature, width/2, height*0.80); //℉
+			ctx.fillText(currentTemperature.toFixed(1), width/2, height*0.80); //℉
 
 			ctx.fillStyle = "white";
 			ctx.font = "bold 18px Roboto";
@@ -101,7 +103,7 @@ function createDisplayImage(width, height, imageFileName, imageCreatedCallback) 
 			ctx.fillStyle = "skyblue";
 			ctx.font = "bold 18px Roboto";
 			ctx.textAlign = "center";
-			ctx	.fillText(currentIPAddress, width/2, height-12);
+			ctx.fillText(currentIPAddress, width/2, height-12);
 		}
 
 		// https://bl.ocks.org/shancarter/f877b05acb3bafb9d5844f2342344385
@@ -124,7 +126,6 @@ function writeFramebuffer(imageFileName) {
 
 	//console.log("fbi -T 2 -d /dev/fb1 -noverbose -a "+ imageFileName);
 	fbiProc = spawn('fbi',  ["-T", "2", "-d", "/dev/fb1", "-noverbose", "-a", imageFileName]);
-	//fbiProc = spawn('open',  [imageFileName]);
 
 	// fbiProc.on('exit', function (code, signal) {
 	// 	console.log(`child process exited with code ${code} and signal ${signal}`);
