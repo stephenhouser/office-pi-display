@@ -8,17 +8,24 @@ import socket
 from pygame.locals import *
 from time import sleep
 from datetime import datetime
+from onewire import Onewire
+from threading import Thread
 import paho.mqtt.client as mqtt
-#from fonts import get_font
+
 #import RPi.GPIO as GPIO
+
+ow_device_temp = "26.103D15000000"
+ow_device = "localhost:4304"
+ow_read_period = 10 # seconds
 
 mqtt_server = "paris"
 mqtt_port = 1883
 mqtt_topic = "living-room/status/temperature"
+
 current_temperature = None
 
 font_preferences = ["roboto", "droidsans", "sans"]
-FONT_XLARGE = 144
+FONT_XLARGE = 132
 FONT_LARGE = 68
 FONT_NORMAL = 36
 FONT_SMALL = 24
@@ -30,6 +37,7 @@ Yellow = (255, 255, 0)
 
 def main():
     initialize_sensors()
+    #initialize_mqtt()
     initialize_display()
 
     clock = pygame.time.Clock()
@@ -64,13 +72,14 @@ def main():
 def initialize_display():
     global display
     os.putenv('SDL_FBDEV', '/dev/fb1')
-    os.putenv('SDL_MOUSEDRV', 'TSLIB')
-    os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
+    #os.putenv('SDL_MOUSEDRV', 'TSLIB')
+    #os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
+
     pygame.init()
     pygame.mouse.set_visible(False)
     display = pygame.display.set_mode((320, 480))
 
-def initialize_sensors():
+def initialize_mqtt():
     global mqttc
     mqttc = mqtt.Client()
     mqttc.on_message = on_mqtt_message
@@ -80,6 +89,19 @@ def initialize_sensors():
 
     mqttc.loop_start()
 
+def initialize_sensors():
+    ow_thread = Thread(target = read_onewire)
+    ow_thread.daemon = True
+    ow_thread.start()
+
+def read_onewire():
+    global current_temperature
+    with Onewire(ow_device) as ow:
+        while True:
+            current_temperature = ow.sensor(ow_device_temp).temperature
+            current_temperature = float(current_temperature) * 1.8 + 32
+            sleep(ow_read_period)
+	
 def on_mqtt_message(client, userdata, message):
     global current_temperature
     print("Received message '" + str(message.payload) + "' on topic '"
