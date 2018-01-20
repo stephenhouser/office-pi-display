@@ -18,9 +18,9 @@ mqtt_topic = "living-room/status/temperature"
 current_temperature = None
 
 font_preferences = ["roboto", "droidsans", "sans"]
-FONT_XLARGE = 168
+FONT_XLARGE = 144
 FONT_LARGE = 68
-FONT_NORMAL = 48
+FONT_NORMAL = 36
 FONT_SMALL = 24
 
 White = (255, 255, 255)
@@ -46,14 +46,14 @@ def main():
         # Update Display
         draw_background()
         if current_temperature != None:
-            draw_string('{0:0.1f}'.format(current_temperature), (160, 360), FONT_XLARGE, White)
+            draw_string('{0:0.1f}'.format(current_temperature), (160, 340), FONT_XLARGE, White)
             draw_string(u'°F', (300, 320), FONT_SMALL, White)
 
         if local_ip != None:
             draw_string("{}".format(local_ip()), (160, 470), FONT_SMALL, SkyBlue)
 
-        draw_string(date_string(), (160, 36), FONT_NORMAL, Yellow)
-        draw_string(time_string(), (160, 36*2+10), FONT_LARGE, Yellow)
+        draw_string(date_string(), (160, FONT_NORMAL), FONT_NORMAL, Yellow)
+        draw_string(time_string(), (160, FONT_NORMAL*2.5), FONT_LARGE, Yellow)
 
         pygame.display.flip()
         #pygame.display.update()
@@ -63,9 +63,9 @@ def main():
 
 def initialize_display():
     global display
-    #os.putenv('SDL_FBDEV', '/dev/fb1')
-    #os.putenv('SDL_MOUSEDRV', 'TSLIB')
-    #os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
+    os.putenv('SDL_FBDEV', '/dev/fb1')
+    os.putenv('SDL_MOUSEDRV', 'TSLIB')
+    os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
     pygame.init()
     pygame.mouse.set_visible(False)
     display = pygame.display.set_mode((320, 480))
@@ -118,7 +118,7 @@ def make_font(fonts, size):
     choices = map(lambda x:x.lower().replace(' ', ''), fonts)
     for choice in choices:
         if choice in available:
-            return pygame.font.SysFont(choice, size)
+            return pygame.font.SysFont(choice, size, bold=True)
     return pygame.font.Font(None, size)
 
 _cached_fonts = {}
