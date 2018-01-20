@@ -14,15 +14,16 @@ import paho.mqtt.client as mqtt
 
 #import RPi.GPIO as GPIO
 
-ow_device_temp = "26.103D15000000"
 ow_device = "localhost:4304"
+ow_sensor = "26.103D15000000"
 ow_read_period = 10 # seconds
 
 mqtt_server = "paris"
 mqtt_port = 1883
-mqtt_topic = "living-room/status/temperature"
+mqtt_topic = "hl122d/status/temperature"
 
 current_temperature = None
+current_humidity = None
 
 font_preferences = ["roboto", "droidsans", "sans"]
 FONT_XLARGE = 132
@@ -54,7 +55,8 @@ def main():
         # Update Display
         draw_background()
         if current_temperature != None:
-            draw_string('{0:0.1f}'.format(current_temperature), (160, 340), FONT_XLARGE, White)
+            temperature = current_temperature * 1.8 + 32 # convert to F for display
+            draw_string('{0:0.1f}'.format(temperature), (160, 340), FONT_XLARGE, White)
             draw_string(u'°F', (300, 320), FONT_SMALL, White)
 
         if local_ip != None:
@@ -65,7 +67,7 @@ def main():
 
         pygame.display.flip()
         #pygame.display.update()
-        sleep(0.1)
+        sleep(0.5)
 
     pygame.quit()
 
@@ -95,11 +97,16 @@ def initialize_sensors():
     ow_thread.start()
 
 def read_onewire():
-    global current_temperature
+    global current_temperature, current_humidity
     with Onewire(ow_device) as ow:
         while True:
-            current_temperature = ow.sensor(ow_device_temp).temperature
-            current_temperature = float(current_temperature) * 1.8 + 32
+            current_temperature = float(ow.sensor(ow_sensor).temperature)
+            #current_temperature = float(current_temperature) * 1.8 + 32
+
+            current_humidity = float(ow.sensor(ow_sensor).humidity)
+
+            print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
+            print("Read /{}/humidity as {}".format(ow_sensor, current_humidity))
             sleep(ow_read_period)
 	
 def on_mqtt_message(client, userdata, message):
