@@ -1,6 +1,8 @@
 # office-pi-display
 
-NodeJS Script to generate 320x480 display for Raspberry Pi in my office
+Python2 script to generate 320x480 display for Raspberry Pi in my office.
+
+This script reads data from a connected OneWire temperature sensor and displays its value (in F) on the PiTFT screen.
 
 ![Sample generated image](display.png)
 
@@ -8,10 +10,8 @@ NodeJS Script to generate 320x480 display for Raspberry Pi in my office
 
 ## To run
 ```
-# Install NodeJS packages
-npm install
+# Install Python packages
+pip install -r requirements.txt
 # Run script and generate image (display.png)
-npm start
-# Display on screen
-sudo fbi -T 2 -d /dev/fb1 -noverbose -a display.png 2>/dev/null
+python display.py
 ```
