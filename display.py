@@ -16,7 +16,7 @@ import paho.mqtt.client as mqtt
 
 ow_device = "localhost:4304"
 ow_sensor = "26.103D15000000"
-ow_read_period = 10 # seconds
+ow_read_period = 30 # seconds
 
 mqtt_server = "paris"
 mqtt_port = 1883
@@ -101,8 +101,6 @@ def read_onewire():
     with Onewire(ow_device) as ow:
         while True:
             current_temperature = float(ow.sensor(ow_sensor).temperature)
-            #current_temperature = float(current_temperature) * 1.8 + 32
-
             current_humidity = float(ow.sensor(ow_sensor).humidity)
 
             print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
@@ -123,10 +121,15 @@ def date_string():
     now = datetime.now()
     return now.strftime("%a, %b %d, %Y")
 
+background_image = None
 def draw_background():
-    display.fill(Black)
-    img = pygame.image.load('background.png')
-    display.blit(img,(0,0))
+    global background_image
+
+    if background_image == None: # only load at start
+        background_image = pygame.image.load('background.png')
+
+    #display.fill(Black)
+    display.blit(background_image,(0,0))
 
 def draw_string(text, centerPoint, font_size, color):
     #if font_size == FONT_LARGE:
