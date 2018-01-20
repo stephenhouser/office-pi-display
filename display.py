@@ -132,7 +132,15 @@ def draw_string(text, centerPoint, font_size, color):
     display.blit(text_image, rect)
 
 def local_ip():
-    return socket.gethostbyname(socket.gethostname())
+    for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+        if not ip.startswith("127."):
+            return ip
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 53))
+    ip = s.getsockname()[0]
+    s.close()
+    return ip
 
 def make_font(fonts, size):
     available = pygame.font.get_fonts()
