@@ -77,7 +77,7 @@ def main():
 
 def initialize_display():
     global display
-    #os.putenv('SDL_FBDEV', '/dev/fb1')
+    os.putenv('SDL_FBDEV', '/dev/fb1')
     #os.putenv('SDL_MOUSEDRV', 'TSLIB')
     #os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
 
@@ -107,7 +107,7 @@ def read_onewire():
     ow_h = "/" + ow_sensor + "/humidity"
     #owproxy.dir() -> [u'/28.000028D70000/', u'/26.000026D90100/']
     while True:
-        current_temperature = float(ow_proxy.read(ow_st))
+        current_temperature = float(ow_proxy.read(ow_t))
         current_humidity = float(ow_proxy.read(ow_h))
 
         print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
