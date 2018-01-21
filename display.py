@@ -104,7 +104,7 @@ def read_onewire():
     ow_h = "/" + ow_sensor + "/humidity"
     #owproxy.dir() -> [u'/28.000028D70000/', u'/26.000026D90100/']
     while True:
-        current_temperature = float(ow_proxy.read(ow_st))
+        current_temperature = float(ow_proxy.read(ow_t))
         current_humidity = float(ow_proxy.read(ow_h))
 
         print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
