@@ -3,9 +3,6 @@
 
 #https://web.archive.org/web/20151027165018/http://jeremyblythe.blogspot.com/2014/09/raspberry-pi-pygame-ui-basics.html
 import os
-import sys
-sys.path.append('/usr/lib/python2.7/dist-packages')
-
 import pygame
 import socket
 from pygame.locals import *
