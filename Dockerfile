@@ -3,7 +3,7 @@ FROM python:2-stretch
 MAINTAINER Stephen Houser <stephenhouser@gmail.com>
 
 RUN apt-get update && \
-	apt-get install -y python-pygame python-ow
+	apt-get install -y python-pygame
 
 WORKDIR /usr/src/app
 
