@@ -8,13 +8,14 @@ import socket
 from pygame.locals import *
 from time import sleep
 from datetime import datetime
-from onewire import Onewire
+import pyownet
 from threading import Thread
 import paho.mqtt.client as mqtt
 
 #import RPi.GPIO as GPIO
 
-ow_device = "localhost:4304"
+ow_server = "localhost"
+ow_port = 4304
 ow_sensor = "26.103D15000000"
 ow_read_period = 30 # seconds
 
@@ -73,7 +74,7 @@ def main():
 
 def initialize_display():
     global display
-    os.putenv('SDL_FBDEV', '/dev/fb1')
+    #os.putenv('SDL_FBDEV', '/dev/fb1')
     #os.putenv('SDL_MOUSEDRV', 'TSLIB')
     #os.putenv('SDL_MOUSEDEV', '/dev/input/touchscreen')
 
@@ -98,14 +99,17 @@ def initialize_sensors():
 
 def read_onewire():
     global current_temperature, current_humidity
-    with Onewire(ow_device) as ow:
-        while True:
-            current_temperature = float(ow.sensor(ow_sensor).temperature)
-            current_humidity = float(ow.sensor(ow_sensor).humidity)
+    ow_proxy = pyownet.protocol.proxy(host=ow_server, port=ow_port)
+    ow_t = "/" + ow_sensor + "/temperature"
+    ow_h = "/" + ow_sensor + "/humidity"
+    #owproxy.dir() -> [u'/28.000028D70000/', u'/26.000026D90100/']
+    while True:
+        current_temperature = float(ow_proxy.read(ow_st))
+        current_humidity = float(ow_proxy.read(ow_h))
 
-            print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
-            print("Read /{}/humidity as {}".format(ow_sensor, current_humidity))
-            sleep(ow_read_period)
+        print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
+        print("Read /{}/humidity as {}".format(ow_sensor, current_humidity))
+        sleep(ow_read_period)
 	
 def on_mqtt_message(client, userdata, message):
     global current_temperature
