@@ -3,28 +3,28 @@
 
 #https://web.archive.org/web/20151027165018/http://jeremyblythe.blogspot.com/2014/09/raspberry-pi-pygame-ui-basics.html
 import os
-import pygame
 import socket
-from pygame.locals import *
+import sqlite3
+import logging
 from time import sleep
 from datetime import datetime
-import pyownet
 from threading import Thread
-import paho.mqtt.client as mqtt
-
-#import RPi.GPIO as GPIO
+import pyownet
+import pygame
+from pygame.locals import *
 
 ow_server = "localhost"
 ow_port = 4304
 ow_sensor = "26.103D15000000"
 ow_read_period = 30 # seconds
 
-mqtt_server = "paris"
-mqtt_port = 1883
-mqtt_topic = "hl122d/status/temperature"
-
 current_temperature = None
 current_humidity = None
+
+logging.basicConfig(filename='office-pi.log', 
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(message)s')
+logging.info('Startup...')
 
 font_preferences = ["roboto", "droidsans", "sans"]
 FONT_XLARGE = 132
@@ -39,7 +39,6 @@ Yellow = (255, 255, 0)
 
 def main():
     initialize_sensors()
-    #initialize_mqtt()
     initialize_display()
 
     clock = pygame.time.Clock()
@@ -48,20 +47,16 @@ def main():
         for event in pygame.event.get():
             if(event.type is MOUSEBUTTONDOWN):
                 pos = pygame.mouse.get_pos()
-                print pos
+                print(pos)
             elif(event.type is MOUSEBUTTONUP):
                 pos = pygame.mouse.get_pos()
-                print pos
+                print(pos)
 
         # Update Display
         draw_background()
         if current_temperature != None:
-            temperature = current_temperature * 1.8 + 32 # convert to F for display
-            draw_string('{0:0.1f}'.format(temperature), (160, 340), FONT_XLARGE, White)
+            draw_string('{0:0.1f}'.format(c2f(current_temperature)), (160, 340), FONT_XLARGE, White)
             draw_string(u'°F', (300, 320), FONT_SMALL, White)
-
-        if local_ip != None:
-            draw_string("{}".format(local_ip()), (160, 470), FONT_SMALL, SkyBlue)
 
         draw_string(date_string(), (160, FONT_NORMAL), FONT_NORMAL, Yellow)
         draw_string(time_string(), (160, FONT_NORMAL*2.5), FONT_LARGE, Yellow)
@@ -82,16 +77,6 @@ def initialize_display():
     pygame.mouse.set_visible(False)
     display = pygame.display.set_mode((320, 480))
 
-def initialize_mqtt():
-    global mqttc
-    mqttc = mqtt.Client()
-    mqttc.on_message = on_mqtt_message
-
-    mqttc.connect(mqtt_server, mqtt_port, 60)
-    mqttc.subscribe(mqtt_topic, qos=0)
-
-    mqttc.loop_start()
-
 def initialize_sensors():
     ow_thread = Thread(target = read_onewire)
     ow_thread.daemon = True
@@ -99,24 +84,32 @@ def initialize_sensors():
 
 def read_onewire():
     global current_temperature, current_humidity
+
+    logdb = sqlite3.connect("office-pi.db")
+
     ow_proxy = pyownet.protocol.proxy(host=ow_server, port=ow_port)
+    #owproxy.dir() -> [u'/28.000028D70000/', u'/26.000026D90100/']
     ow_t = "/" + ow_sensor + "/temperature"
     ow_h = "/" + ow_sensor + "/humidity"
-    #owproxy.dir() -> [u'/28.000028D70000/', u'/26.000026D90100/']
     while True:
         current_temperature = float(ow_proxy.read(ow_t))
         current_humidity = float(ow_proxy.read(ow_h))
 
-        print("Read /{}/temperature as {}".format(ow_sensor, current_temperature))
-        print("Read /{}/humidity as {}".format(ow_sensor, current_humidity))
+        print("/{}/temperature => {}".format(ow_sensor, current_temperature))
+        print("/{}/humidity => {}".format(ow_sensor, current_humidity))
+
+        logging.info("temperature={}c/{}f".format(current_temperature, c2f(current_temperature)))
+        logging.info("humidity={}".format(current_humidity))
+
+        now = datetime.now()
+        temp_data = [now, current_temperature, 'C']
+        logdb.execute('insert into temperature values(?, ?, ?)', temp_data)
+        humi_data = [now, current_humidity, '%']
+        logdb.execute('insert into humidity values(?, ?, ?)', humi_data)
+        logdb.commit()
+
         sleep(ow_read_period)
 	
-def on_mqtt_message(client, userdata, message):
-    global current_temperature
-    print("Received message '" + str(message.payload) + "' on topic '"
-        + message.topic + "' with QoS " + str(message.qos))
-    current_temperature = float(message.payload) * 1.8 + 32
-
 def time_string():
     now = datetime.now()
     return now.strftime("%-I:%M:%S")
@@ -136,11 +129,7 @@ def draw_background():
     display.blit(background_image,(0,0))
 
 def draw_string(text, centerPoint, font_size, color):
-    #if font_size == FONT_LARGE:
-    #    font = pygame.font.Font("droid-sans-mono/DroidSansMono.ttf", font_size)
-    #else:
     font = get_font(font_preferences, font_size)
-
     text_image = font.render(text, True, color)
     rect = text_image.get_rect(center=centerPoint)
     display.blit(text_image, rect)
@@ -174,6 +163,9 @@ def get_font(font_preferences, size):
         font = make_font(font_preferences, size)
         _cached_fonts[key] = font
     return font
+
+def c2f(c):
+    return c * 1.8 + 32 # convert to F for display
 
 if __name__ == "__main__":
     main()

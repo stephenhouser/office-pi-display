@@ -1,0 +1,29 @@
+#/bin/bash
+
+#Connection to 139.140.85.108 closed.
+SCREEN=/tmp/screen.png
+
+while true
+do
+	TIME=$(date '+%_I:%M:%S')
+	DATE=$(date '+%a, %b %_d')
+	TEMP_C=$(cat /mnt/1wire/26.103D15000000/temperature)
+	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc)
+	IP=$(hostname -I)
+
+	convert background.png \
+		-gravity north  -font notosans -pointsize 64  -fill yellow  -stroke yellow  -annotate 0x0+0+0   "${TIME}" \
+		-gravity north  -font notosans -pointsize 48  -fill yellow  -stroke yellow  -annotate 0x0+0+70  "${DATE}" \
+		-gravity center -font notosans -pointsize 142 -fill white   -stroke white   -annotate 0x0+0+110 "${TEMP}" \
+		-gravity south  -font notosans -pointsize 24  -fill skyblue -stroke skyblue -annotate 0x0+0+0   "${IP}" \
+		${SCREEN} 2> /dev/null > /dev/null
+
+	# -gravity center -font notosans -pointsize 24 -fill white   -stroke white   -annotate 0x0+150+110 "°F" \
+	fbi -d /dev/fb1 \
+		--vt 1 \
+		--once \
+		--nocomments --noedit --noverbose \
+		${SCREEN} 2>/dev/null
+
+	sleep 2
+done

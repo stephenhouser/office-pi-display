@@ -15,3 +15,7 @@ pip install -r requirements.txt
 # Run script and generate image (display.png)
 python display.py
 ```
+
+```
+ sudo python display.py
+```
