@@ -20,7 +20,7 @@ do
 		-gravity north  -font notosans -pointsize 48  -fill yellow  -stroke yellow  -annotate 0x0+0+70  "${DATE}" \
 		-gravity center -font notosans -pointsize 142 -fill white   -stroke white   -annotate 0x0+0+110 "${TEMP}" \
 		-gravity south  -font notosans -pointsize 24  -fill skyblue -stroke skyblue -annotate 0x0+0+0   "${IP}" \
-		-flip -alpha set -define bmp:format=bmp3 -define bmp3:alpha=true bmp3:- 
+		-flip -alpha set -define bmp:format=bmp3 -define bmp3:alpha=true bmp3:- \
 		2> /dev/null | tail -c 614400 > /dev/fb1
 
 	sleep 1
