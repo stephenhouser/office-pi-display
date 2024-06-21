@@ -11,7 +11,7 @@
 
 while true
 do
-	TIME=$(date '+%_I:%M')
+	TIME=$(date '+%_I:%M:%S')
 	DATE=$(date '+%a, %b %_d')
 	TEMP_C=$(cat /mnt/1wire/26.103D15000000/temperature)
 	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc -l | xargs printf %.1f)
@@ -25,6 +25,6 @@ do
 		-flip -alpha set -define bmp:format=bmp3 -define bmp3:alpha=true bmp3:- \
 		| tail -c 614400 > /dev/fb1
 
-	sleep 15
+	sleep 1
 done
 
