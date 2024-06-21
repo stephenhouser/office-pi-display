@@ -5,7 +5,7 @@ SCREEN=/tmp/screen.png
 
 while true
 do
-	TIME=$(date '+%_I:%M:%S')
+	TIME=$(date '+%_I:%M')
 	DATE=$(date '+%a, %b %_d')
 	TEMP_C=$(cat /mnt/1wire/26.103D15000000/temperature)
 	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc -l | xargs printf %.1f)
@@ -25,5 +25,5 @@ do
 		--nocomments --noedit --noverbose \
 		${SCREEN} 2>/dev/null
 
-	sleep 2
+	sleep 15
 done
