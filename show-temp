@@ -8,7 +8,7 @@ do
 	TIME=$(date '+%_I:%M:%S')
 	DATE=$(date '+%a, %b %_d')
 	TEMP_C=$(cat /mnt/1wire/26.103D15000000/temperature)
-	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc)
+	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc -l | xargs printf %.1f)
 	IP=$(hostname -I)
 
 	convert background.png \
