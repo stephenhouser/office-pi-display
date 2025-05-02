@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Define the database name
+DB_NAME="office-pi.db"
+
+# Create the SQLite3 database and table
+sqlite3 "$DB_NAME" <<EOF
+CREATE TABLE IF NOT EXISTS temperature (
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    value REAL,
+    units TEXT
+);
+EOF
+
+sqlite3 "$DB_NAME" <<EOF
+CREATE TABLE IF NOT EXISTS humidity (
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    value REAL,
+    units TEXT
+);
+EOF
