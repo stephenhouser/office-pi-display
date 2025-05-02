@@ -38,6 +38,8 @@ EOF
 cat >> ~/.screenrc << EOF
 # don't display the copyright page
 startup_message off
+log off
+defscrollback 100
 EOF
 
 ./create-db

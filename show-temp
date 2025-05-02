@@ -6,8 +6,11 @@
 # height=480A
 
 temp_device=/mnt/1wire/26.103D15000000/temperature
+humi_device=/mnt/1wire/26.103D15000000/humidity
 frame_buffer=/dev/fb0
 database=office-pi.db
+
+LAST_TEMP_C=0
 
 while true
 do
@@ -17,13 +20,25 @@ do
 	TEMP=$(echo "1.8 * ${TEMP_C} + 32" | bc -l | xargs printf %.1f)
 	IP=$(hostname -I)
 
-	# Display in terminal
-	echo "${DATE} ${TIME} ${IP} ${TEMP}"
+	PREV_TEMP_C=$(sqlite3 ${database} "SELECT value FROM temperature ORDER BY time desc LIMIT 1;")
+	DELTA_TEMP_C=$(echo "${PREV_TEMP_C} - ${TEMP_C}" | bc | xargs printf %.0f)
+	DELTA_TEMP_C=${DELTA_TEMP_C#-}
 
-	# Log to database
-	sqlite3 ${database} <<-EOF
-	INSERT INTO temperature(value, units) VALUES(${TEMP_C}, 'C');
-	EOF
+	# Display in terminal if changed
+	if [ "${TEMP_C}" != "${LAST_TEMP_C}" ]; then
+		echo "CHANGE: ${DATE} ${TIME} ${IP} ${TEMP} (${DELTA_TEMP_C})"
+	fi
+	LAST_TEMP_C=${TEMP_C}
+
+	# Log to database if changed more than 1 degree C
+	if [ ${DELTA_TEMP_C} -ge 1 ]; then
+		echo "WRITE : ${DATE} ${TIME} ${IP} ${TEMP}"
+		SAVE_TEMP_C=$(echo ${TEMP_C} | xargs printf %.0f)
+		sqlite3 ${database} "INSERT INTO temperature(value, units) VALUES(${SAVE_TEMP_C}, 'C');"
+
+		HUMID=$(cat ${humi_device})
+		sqlite3 ${database} "INSERT INTO humidity(value, units) VALUES(${HUMID}, '%');"
+	fi
 
 	# Display on framebuffer
 	convert background.png \
