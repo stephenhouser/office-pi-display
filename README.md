@@ -18,10 +18,68 @@ Launch the script `show-temp` on startup or login of the default user. (to be wr
 
 ## Configuration
 
-* Follow Adafruit's [Easy Install](https://learn.adafruit.com/adafruit-pitft-3-dot-5-touch-screen-for-raspberry-pi/easy-install-2) for the display with 90-degree rotation.
 * Configure Raspberry Pi with `raspi-config` **NOTE: Don't enable 1Wire**
-* Install `owfs` and `imagemagick`
+* Install `owfs`, `imagemagick`, `screen`, and `python3-venv`
+
+```
+sudo apt-get update
+sudo apt install screen owfs imagemagick python3-venv
+```
+
+* Follow Adafruit's [Easy Install](https://learn.adafruit.com/adafruit-pitft-3-dot-5-touch-screen-for-raspberry-pi/easy-install-2) for the display with 90-degree rotation.
+
+```
+python -m venv env --system-site-packages
+source env/bin/activate
+sudo apt-get install -y git python3-pip
+pip3 install --upgrade adafruit-python-shell click
+git clone https://github.com/adafruit/Raspberry-Pi-Installer-Scripts.git
+cd Raspberry-Pi-Installer-Scripts
+
+sudo -E env PATH=$PATH python3 adafruit-pitft.py --display=35r --rotation=180 --install-type=console
+```
+
+* Enable OneWire (1wire)
+
+```
+mkdir /mnt/1wire
+vi /etc/owfs.conf
+    server: device = /dev/ttyUSB0
+
+    mountpoint = /mnt/1wire
+    allow_other
+```
+
+Onewire will be turned on on reboot
+```
+systemctl restart owserver
+systemctl restart owfs
+```
+
+* Set screen rotation in `/boot/firmware/config.txt`
+
+```
+dtoverlay=pitft35-resistive,rotate=180,speed=20000000,fps=20,drm
+```
+
 * Clone this repo and tweak any parameters needed in `show-temp`
+
+* Add to end of `~/.profile`
+
+```
+if [ "$SSH_TTY"x == "x" ] ; then
+	echo "Running on tty"
+	screen -S display  bash -c "cd office-pi-display; ./show-temp"
+fi
+```
+
+* Create `~/.screenrc`
+
+```
+# don't display the copyright page
+startup_message off
+```
+
 * Run!
 
 [background.jpg](http://adafruit-download.s3.amazonaws.com/adapiluv320x240.jpg) is copied and modifiled from [Adafruit PiTFT 3.5" Touch Screen for Raspberry Pi](https://learn.adafruit.com/adafruit-pitft-3-dot-5-touch-screen-for-raspberry-pi/displaying-images).
